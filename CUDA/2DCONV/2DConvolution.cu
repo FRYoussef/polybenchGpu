@@ -184,25 +184,25 @@ int main(int argc, char *argv[])
 
 	convolution2DCuda(ni, nj, POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B), POLYBENCH_ARRAY(B_outputFromGpu));
 
-	#ifdef RUN_ON_CPU
+	// #ifdef RUN_ON_CPU
 	
-	 	/* Start timer. */
-	  	polybench_start_instruments;
+	//  	/* Start timer. */
+	//   	polybench_start_instruments;
 
-		conv2D(ni, nj, POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B));
+	// 	conv2D(ni, nj, POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B));
 
-		/* Stop and print timer. */
-		printf("CPU Time in seconds:\n");
-	  	polybench_stop_instruments;
-	 	polybench_print_instruments;
+	// 	/* Stop and print timer. */
+	// 	printf("CPU Time in seconds:\n");
+	//   	polybench_stop_instruments;
+	//  	polybench_print_instruments;
 	
-		compareResults(ni, nj, POLYBENCH_ARRAY(B), POLYBENCH_ARRAY(B_outputFromGpu));
+	// 	compareResults(ni, nj, POLYBENCH_ARRAY(B), POLYBENCH_ARRAY(B_outputFromGpu));
 
-	#else //print output to stderr so no dead code elimination
+	// #else //print output to stderr so no dead code elimination
 
-		print_array(ni, nj, POLYBENCH_ARRAY(B_outputFromGpu));
+	// 	print_array(ni, nj, POLYBENCH_ARRAY(B_outputFromGpu));
 
-	#endif //RUN_ON_CPU
+	// #endif //RUN_ON_CPU
 
 
 	POLYBENCH_FREE_ARRAY(A);
