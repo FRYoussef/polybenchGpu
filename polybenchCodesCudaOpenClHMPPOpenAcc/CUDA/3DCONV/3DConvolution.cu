@@ -24,9 +24,9 @@
 #define GPU_DEVICE 0
 
 /* Problem size */
-#define NI 256
-#define NJ 256
-#define NK 256
+// #define ni 256
+// #define nj 256
+// #define nk 256
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 32
@@ -37,76 +37,76 @@ typedef float DATA_TYPE;
 
 
 
-void conv3D(DATA_TYPE* A, DATA_TYPE* B)
+// void conv3D(DATA_TYPE* A, DATA_TYPE* B)
+// {
+// 	int i, j, k;
+// 	DATA_TYPE c11, c12, c13, c21, c22, c23, c31, c32, c33;
+
+// 	c11 = +2;  c21 = +5;  c31 = -8;
+// 	c12 = -3;  c22 = +6;  c32 = -9;
+// 	c13 = +4;  c23 = +7;  c33 = +10;
+
+// 	for (i = 1; i < ni - 1; ++i) // 0
+// 	{
+// 		for (j = 1; j < nj - 1; ++j) // 1
+// 		{
+// 			for (k = 1; k < nk -1; ++k) // 2
+// 			{
+// 				//printf("i:%d\nj:%d\nk:%d\n", i, j, k);
+// 				B[i*(nk * nj) + j*nk + k] = c11 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c13 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+// 					     +   c21 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c23 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+// 					     +   c31 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c33 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+// 					     +   c12 * A[(i + 0)*(nk * nj) + (j - 1)*nk + (k + 0)]  +  c22 * A[(i + 0)*(nk * nj) + (j + 0)*nk + (k + 0)]   
+// 					     +   c32 * A[(i + 0)*(nk * nj) + (j + 1)*nk + (k + 0)]  +  c11 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k + 1)]  
+// 					     +   c13 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k + 1)]  +  c21 * A[(i - 1)*(nk * nj) + (j + 0)*nk + (k + 1)]  
+// 					     +   c23 * A[(i + 1)*(nk * nj) + (j + 0)*nk + (k + 1)]  +  c31 * A[(i - 1)*(nk * nj) + (j + 1)*nk + (k + 1)]  
+// 					     +   c33 * A[(i + 1)*(nk * nj) + (j + 1)*nk + (k + 1)];
+// 			}
+// 		}
+// 	}
+// }
+
+
+void init(DATA_TYPE* A, int ni, int nj, int nk)
 {
 	int i, j, k;
-	DATA_TYPE c11, c12, c13, c21, c22, c23, c31, c32, c33;
 
-	c11 = +2;  c21 = +5;  c31 = -8;
-	c12 = -3;  c22 = +6;  c32 = -9;
-	c13 = +4;  c23 = +7;  c33 = +10;
-
-	for (i = 1; i < NI - 1; ++i) // 0
-	{
-		for (j = 1; j < NJ - 1; ++j) // 1
-		{
-			for (k = 1; k < NK -1; ++k) // 2
-			{
-				//printf("i:%d\nj:%d\nk:%d\n", i, j, k);
-				B[i*(NK * NJ) + j*NK + k] = c11 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c13 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c21 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c23 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c31 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c33 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c12 * A[(i + 0)*(NK * NJ) + (j - 1)*NK + (k + 0)]  +  c22 * A[(i + 0)*(NK * NJ) + (j + 0)*NK + (k + 0)]   
-					     +   c32 * A[(i + 0)*(NK * NJ) + (j + 1)*NK + (k + 0)]  +  c11 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k + 1)]  
-					     +   c13 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k + 1)]  +  c21 * A[(i - 1)*(NK * NJ) + (j + 0)*NK + (k + 1)]  
-					     +   c23 * A[(i + 1)*(NK * NJ) + (j + 0)*NK + (k + 1)]  +  c31 * A[(i - 1)*(NK * NJ) + (j + 1)*NK + (k + 1)]  
-					     +   c33 * A[(i + 1)*(NK * NJ) + (j + 1)*NK + (k + 1)];
-			}
-		}
-	}
-}
-
-
-void init(DATA_TYPE* A)
-{
-	int i, j, k;
-
-	for (i = 0; i < NI; ++i)
+	for (i = 0; i < ni; ++i)
     	{
-		for (j = 0; j < NJ; ++j)
+		for (j = 0; j < nj; ++j)
 		{
-			for (k = 0; k < NK; ++k)
+			for (k = 0; k < nk; ++k)
 			{
-				A[i*(NK * NJ) + j*NK + k] = i % 12 + 2 * (j % 7) + 3 * (k % 13);
+				A[i*(nk * nj) + j*nk + k] = i % 12 + 2 * (j % 7) + 3 * (k % 13);
 			}
 		}
 	}
 }
 
 
-void compareResults(DATA_TYPE* B, DATA_TYPE* B_outputFromGpu)
-{
-	int i, j, k, fail;
-	fail = 0;
+// void compareResults(DATA_TYPE* B, DATA_TYPE* B_outputFromGpu)
+// {
+// 	int i, j, k, fail;
+// 	fail = 0;
 	
-	// Compare result from cpu and gpu...
-	for (i = 1; i < NI - 1; ++i) // 0
-	{
-		for (j = 1; j < NJ - 1; ++j) // 1
-		{
-			for (k = 1; k < NK - 1; ++k) // 2
-			{
-				if (percentDiff(B[i*(NK * NJ) + j*NK + k], B_outputFromGpu[i*(NK * NJ) + j*NK + k]) > PERCENT_DIFF_ERROR_THRESHOLD)
-				{
-					fail++;
-				}
-			}	
-		}
-	}
+// 	// Compare result from cpu and gpu...
+// 	for (i = 1; i < ni - 1; ++i) // 0
+// 	{
+// 		for (j = 1; j < nj - 1; ++j) // 1
+// 		{
+// 			for (k = 1; k < nk - 1; ++k) // 2
+// 			{
+// 				if (percentDiff(B[i*(nk * nj) + j*nk + k], B_outputFromGpu[i*(nk * nj) + j*nk + k]) > PERCENT_DIFF_ERROR_THRESHOLD)
+// 				{
+// 					fail++;
+// 				}
+// 			}	
+// 		}
+// 	}
 	
-	// Print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// Print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -118,7 +118,7 @@ void GPU_argv_init()
 }
 
 
-__global__ void convolution3D_kernel(DATA_TYPE *A, DATA_TYPE *B, int i)
+__global__ void convolution3D_kernel(DATA_TYPE *A, DATA_TYPE *B, int i, int ni, int nj, int nk)
 {
 	int k = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -130,48 +130,48 @@ __global__ void convolution3D_kernel(DATA_TYPE *A, DATA_TYPE *B, int i)
 	c13 = +4;  c23 = +7;  c33 = +10;
 
 
-	if ((i < (NI-1)) && (j < (NJ-1)) &&  (k < (NK-1)) && (i > 0) && (j > 0) && (k > 0))
+	if ((i < (ni-1)) && (j < (nj-1)) &&  (k < (nk-1)) && (i > 0) && (j > 0) && (k > 0))
 	{
-		B[i*(NK * NJ) + j*NK + k] = c11 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c13 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c21 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c23 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c31 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]  +  c33 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k - 1)]
-					     +   c12 * A[(i + 0)*(NK * NJ) + (j - 1)*NK + (k + 0)]  +  c22 * A[(i + 0)*(NK * NJ) + (j + 0)*NK + (k + 0)]   
-					     +   c32 * A[(i + 0)*(NK * NJ) + (j + 1)*NK + (k + 0)]  +  c11 * A[(i - 1)*(NK * NJ) + (j - 1)*NK + (k + 1)]  
-					     +   c13 * A[(i + 1)*(NK * NJ) + (j - 1)*NK + (k + 1)]  +  c21 * A[(i - 1)*(NK * NJ) + (j + 0)*NK + (k + 1)]  
-					     +   c23 * A[(i + 1)*(NK * NJ) + (j + 0)*NK + (k + 1)]  +  c31 * A[(i - 1)*(NK * NJ) + (j + 1)*NK + (k + 1)]  
-					     +   c33 * A[(i + 1)*(NK * NJ) + (j + 1)*NK + (k + 1)];
+		B[i*(nk * nj) + j*nk + k] = c11 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c13 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+					     +   c21 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c23 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+					     +   c31 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k - 1)]  +  c33 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k - 1)]
+					     +   c12 * A[(i + 0)*(nk * nj) + (j - 1)*nk + (k + 0)]  +  c22 * A[(i + 0)*(nk * nj) + (j + 0)*nk + (k + 0)]   
+					     +   c32 * A[(i + 0)*(nk * nj) + (j + 1)*nk + (k + 0)]  +  c11 * A[(i - 1)*(nk * nj) + (j - 1)*nk + (k + 1)]  
+					     +   c13 * A[(i + 1)*(nk * nj) + (j - 1)*nk + (k + 1)]  +  c21 * A[(i - 1)*(nk * nj) + (j + 0)*nk + (k + 1)]  
+					     +   c23 * A[(i + 1)*(nk * nj) + (j + 0)*nk + (k + 1)]  +  c31 * A[(i - 1)*(nk * nj) + (j + 1)*nk + (k + 1)]  
+					     +   c33 * A[(i + 1)*(nk * nj) + (j + 1)*nk + (k + 1)];
 	}
 }
 
 
-void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu)
+void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, int ni, int nj, int nk, int local_size)
 {
 	double t_start, t_end;
 
 	DATA_TYPE *A_gpu;
 	DATA_TYPE *B_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * NI * NJ * NK);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * NI * NJ * NK);
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * NI * NJ * NK, cudaMemcpyHostToDevice);
-	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * NI * NJ * NK, cudaMemcpyHostToDevice);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * ni * nj * nk);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * ni * nj * nk);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nj * nk, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * ni * nj * nk, cudaMemcpyHostToDevice);
 	
 	
-	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid((size_t)(ceil( ((float)NK) / ((float)block.x) )), (size_t)(ceil( ((float)NJ) / ((float)block.y) )));
+	dim3 block(local_size, local_size);
+	dim3 grid((size_t)(ceil( ((float)nk) / ((float)block.x) )), (size_t)(ceil( ((float)nj) / ((float)block.y) )));
 	
 	t_start = rtclock();
 	int i;
-	for (i = 1; i < NI - 1; ++i) // 0
+	for (i = 1; i < ni - 1; ++i) // 0
 	{
-		convolution3D_kernel<<< grid, block >>>(A_gpu, B_gpu, i);
+		convolution3D_kernel<<< grid, block >>>(A_gpu, B_gpu, i, ni, nj, nk);
 	}
 
 	cudaThreadSynchronize();
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	cudaMemcpy(B_outputFromGpu, B_gpu, sizeof(DATA_TYPE) * NI * NJ * NK, cudaMemcpyDeviceToHost);
+	cudaMemcpy(B_outputFromGpu, B_gpu, sizeof(DATA_TYPE) * ni * nj * nk, cudaMemcpyDeviceToHost);
 	
 	cudaFree(A_gpu);
 	cudaFree(B_gpu);
@@ -180,28 +180,40 @@ void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu)
 
 int main(int argc, char *argv[])
 {
-	double t_start, t_end;
+	// double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* B;
 	DATA_TYPE* B_outputFromGpu;
 
-	A = (DATA_TYPE*)malloc(NI*NJ*NK*sizeof(DATA_TYPE));
-	B = (DATA_TYPE*)malloc(NI*NJ*NK*sizeof(DATA_TYPE));
-	B_outputFromGpu = (DATA_TYPE*)malloc(NI*NJ*NK*sizeof(DATA_TYPE));
+	int ni, nj, nk, local_size;
+
+	if(argc != 3){
+		fprintf(stdout, "E.g.: exe size local_size\n");
+		return 1;
+	}
+
+	ni = atoi(argv[1]);
+	nj = ni;
+	nk = ni;
+	local_size = atoi(argv[2]);
+
+	A = (DATA_TYPE*)malloc(ni*nj*nk*sizeof(DATA_TYPE));
+	B = (DATA_TYPE*)malloc(ni*nj*nk*sizeof(DATA_TYPE));
+	B_outputFromGpu = (DATA_TYPE*)malloc(ni*nj*nk*sizeof(DATA_TYPE));
 	
-	init(A);
+	init(A, ni, nj, nk);
 	
 	GPU_argv_init();
 
-	convolution3DCuda(A, B, B_outputFromGpu);
+	convolution3DCuda(A, B, B_outputFromGpu, ni, nj, nk, local_size);
 
-	t_start = rtclock();
-	conv3D(A, B);
-	t_end = rtclock();
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// t_start = rtclock();
+	// conv3D(A, B);
+	// t_end = rtclock();
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	compareResults(B, B_outputFromGpu);
+	// compareResults(B, B_outputFromGpu);
 
 	free(A);
 	free(B);

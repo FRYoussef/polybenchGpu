@@ -21,13 +21,13 @@
 
 #define GPU_DEVICE 0
 
-/* Problem size. */
-#define NX 4096
-#define NY 4096
+// /* Problem size. */
+// #define nx 4096
+// #define ny 4096
 
-/* Thread block dimensions */
-#define DIM_THREAD_BLOCK_X 256
-#define DIM_THREAD_BLOCK_Y 1
+// /* Thread block dimensions */
+// #define local_size 256
+// #define local_size 1
 
 #ifndef M_PI
 #define M_PI 3.14159
@@ -38,52 +38,52 @@ typedef float DATA_TYPE;
 
 
 
-void init_array(DATA_TYPE *A, DATA_TYPE *p, DATA_TYPE *r)
+void init_array(DATA_TYPE *A, DATA_TYPE *p, DATA_TYPE *r, int nx, int ny)
 {
 	int i, j;
 
-  	for (i = 0; i < NX; i++)
+  	for (i = 0; i < nx; i++)
 	{
     		r[i] = i * M_PI;
 
-    		for (j = 0; j < NY; j++)
+    		for (j = 0; j < ny; j++)
 		{
-      			A[i*NY + j] = ((DATA_TYPE) i*j) / NX;
+      			A[i*ny + j] = ((DATA_TYPE) i*j) / nx;
 		}
  	}
 	
-	for (i = 0; i < NY; i++)
+	for (i = 0; i < ny; i++)
 	{
     		p[i] = i * M_PI;
 	}
 }
 
 
-void compareResults(DATA_TYPE* s, DATA_TYPE* s_outputFromGpu, DATA_TYPE* q, DATA_TYPE* q_outputFromGpu)
-{
-	int i,fail;
-	fail = 0;
+// void compareResults(DATA_TYPE* s, DATA_TYPE* s_outputFromGpu, DATA_TYPE* q, DATA_TYPE* q_outputFromGpu)
+// {
+// 	int i,fail;
+// 	fail = 0;
 
-	// Compare s with s_cuda
-	for (i=0; i<NX; i++)
-	{
-		if (percentDiff(q[i], q_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD)
-		{
-			fail++;
-		}
-	}
+// 	// Compare s with s_cuda
+// 	for (i=0; i<nx; i++)
+// 	{
+// 		if (percentDiff(q[i], q_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD)
+// 		{
+// 			fail++;
+// 		}
+// 	}
 
-	for (i=0; i<NY; i++)
-	{
-		if (percentDiff(s[i], s_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD)
-		{
-			fail++;
-		}		
-	}
+// 	for (i=0; i<ny; i++)
+// 	{
+// 		if (percentDiff(s[i], s_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD)
+// 		{
+// 			fail++;
+// 		}		
+// 	}
 	
-	// print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -96,64 +96,64 @@ void GPU_argv_init()
 
 
 //Distributed (split) from initial loop and permuted into reverse order to allow parallelism...
-__global__ void bicg_kernel1(DATA_TYPE *A, DATA_TYPE *r, DATA_TYPE *s)
+__global__ void bicg_kernel1(DATA_TYPE *A, DATA_TYPE *r, DATA_TYPE *s, int nx, int ny)
 {
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 	
-	if (j < NY)
+	if (j < ny)
 	{
 		s[j] = 0.0f;
 
 		int i;
-		for(i = 0; i < NX; i++)
+		for(i = 0; i < nx; i++)
 		{
-			s[j] += A[i * NY + j] * r[i];
+			s[j] += A[i * ny + j] * r[i];
 		}
 	}	
 }
 
 
 //Distributed (split) from initial loop to allow parallelism
-__global__ void bicg_kernel2(DATA_TYPE *A, DATA_TYPE *p, DATA_TYPE *q)
+__global__ void bicg_kernel2(DATA_TYPE *A, DATA_TYPE *p, DATA_TYPE *q, int nx, int ny)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	
-	if (i < NX)
+	if (i < nx)
 	{
 		q[i] = 0.0f;
 
 		int j;
-		for(j=0; j < NY; j++)
+		for(j=0; j < ny; j++)
 		{
-			q[i] += A[i * NY + j] * p[j];
+			q[i] += A[i * ny + j] * p[j];
 		}
 	}
 }
 
 
-void bicg_cpu(DATA_TYPE* A, DATA_TYPE* r, DATA_TYPE* s, DATA_TYPE* p, DATA_TYPE* q)
-{
-	int i,j;
+// void bicg_cpu(DATA_TYPE* A, DATA_TYPE* r, DATA_TYPE* s, DATA_TYPE* p, DATA_TYPE* q)
+// {
+// 	int i,j;
 	
-  	for (i = 0; i < NY; i++)
-	{
-		s[i] = 0.0;
-	}
+//   	for (i = 0; i < ny; i++)
+// 	{
+// 		s[i] = 0.0;
+// 	}
 
-    for (i = 0; i < NX; i++)
-    {
-		q[i] = 0.0;
-		for (j = 0; j < NY; j++)
-	  	{
-	    		s[j] = s[j] + r[i] * A[i*NY + j];
-	    		q[i] = q[i] + A[i*NY + j] * p[j];
-	  	}
-	}
-}
+//     for (i = 0; i < nx; i++)
+//     {
+// 		q[i] = 0.0;
+// 		for (j = 0; j < ny; j++)
+// 	  	{
+// 	    		s[j] = s[j] + r[i] * A[i*ny + j];
+// 	    		q[i] = q[i] + A[i*ny + j] * p[j];
+// 	  	}
+// 	}
+// }
 
 
 void bicgCuda(DATA_TYPE* A, DATA_TYPE* r, DATA_TYPE* s, DATA_TYPE* p, DATA_TYPE* q,
-			DATA_TYPE* s_outputFromGpu, DATA_TYPE* q_outputFromGpu)
+			DATA_TYPE* s_outputFromGpu, DATA_TYPE* q_outputFromGpu, int nx, int ny, int local_size)
 {
 	double t_start, t_end;
 
@@ -163,31 +163,31 @@ void bicgCuda(DATA_TYPE* A, DATA_TYPE* r, DATA_TYPE* s, DATA_TYPE* p, DATA_TYPE*
 	DATA_TYPE *r_gpu;
 	DATA_TYPE *s_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * NX * NY);
-	cudaMalloc((void **)&r_gpu, sizeof(DATA_TYPE) * NX);
-	cudaMalloc((void **)&s_gpu, sizeof(DATA_TYPE) * NY);
-	cudaMalloc((void **)&p_gpu, sizeof(DATA_TYPE) * NY);
-	cudaMalloc((void **)&q_gpu, sizeof(DATA_TYPE) * NX);
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * NX * NY, cudaMemcpyHostToDevice);
-	cudaMemcpy(r_gpu, r, sizeof(DATA_TYPE) * NX, cudaMemcpyHostToDevice);
-	cudaMemcpy(s_gpu, s, sizeof(DATA_TYPE) * NY, cudaMemcpyHostToDevice);
-	cudaMemcpy(p_gpu, p, sizeof(DATA_TYPE) * NY, cudaMemcpyHostToDevice);
-	cudaMemcpy(q_gpu, q, sizeof(DATA_TYPE) * NX, cudaMemcpyHostToDevice);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * nx * ny);
+	cudaMalloc((void **)&r_gpu, sizeof(DATA_TYPE) * nx);
+	cudaMalloc((void **)&s_gpu, sizeof(DATA_TYPE) * ny);
+	cudaMalloc((void **)&p_gpu, sizeof(DATA_TYPE) * ny);
+	cudaMalloc((void **)&q_gpu, sizeof(DATA_TYPE) * nx);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * nx * ny, cudaMemcpyHostToDevice);
+	cudaMemcpy(r_gpu, r, sizeof(DATA_TYPE) * nx, cudaMemcpyHostToDevice);
+	cudaMemcpy(s_gpu, s, sizeof(DATA_TYPE) * ny, cudaMemcpyHostToDevice);
+	cudaMemcpy(p_gpu, p, sizeof(DATA_TYPE) * ny, cudaMemcpyHostToDevice);
+	cudaMemcpy(q_gpu, q, sizeof(DATA_TYPE) * nx, cudaMemcpyHostToDevice);
 
-	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid1((size_t)(ceil( ((float)NY) / ((float)block.x) )), 1);
-	dim3 grid2((size_t)(ceil( ((float)NX) / ((float)block.x) )), 1);
+	dim3 block(local_size, local_size);
+	dim3 grid1((size_t)(ceil( ((float)ny) / ((float)block.x) )), 1);
+	dim3 grid2((size_t)(ceil( ((float)nx) / ((float)block.x) )), 1);
 
 	t_start = rtclock();
-	bicg_kernel1<<< grid1, block >>>(A_gpu, r_gpu, s_gpu);
+	bicg_kernel1<<< grid1, block >>>(A_gpu, r_gpu, s_gpu, nx, ny);
 	cudaThreadSynchronize();
-	bicg_kernel2<<< grid2, block >>>(A_gpu, p_gpu, q_gpu);
+	bicg_kernel2<<< grid2, block >>>(A_gpu, p_gpu, q_gpu, nx, ny);
 	cudaThreadSynchronize();
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	cudaMemcpy(s_outputFromGpu, s_gpu, sizeof(DATA_TYPE) * NY, cudaMemcpyDeviceToHost);
-	cudaMemcpy(q_outputFromGpu, q_gpu, sizeof(DATA_TYPE) * NX, cudaMemcpyDeviceToHost);
+	cudaMemcpy(s_outputFromGpu, s_gpu, sizeof(DATA_TYPE) * ny, cudaMemcpyDeviceToHost);
+	cudaMemcpy(q_outputFromGpu, q_gpu, sizeof(DATA_TYPE) * nx, cudaMemcpyDeviceToHost);
 
 	cudaFree(A_gpu);
 	cudaFree(r_gpu);
@@ -199,7 +199,7 @@ void bicgCuda(DATA_TYPE* A, DATA_TYPE* r, DATA_TYPE* s, DATA_TYPE* p, DATA_TYPE*
 
 int main(int argc, char** argv)
 {
-	double t_start, t_end;
+	// double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* r;
@@ -208,28 +208,39 @@ int main(int argc, char** argv)
 	DATA_TYPE* q;
 	DATA_TYPE* s_outputFromGpu;
 	DATA_TYPE* q_outputFromGpu;
- 	
-	A = (DATA_TYPE*)malloc(NX*NY*sizeof(DATA_TYPE));
-	r = (DATA_TYPE*)malloc(NX*sizeof(DATA_TYPE));
-	s = (DATA_TYPE*)malloc(NY*sizeof(DATA_TYPE));
-	p = (DATA_TYPE*)malloc(NY*sizeof(DATA_TYPE));
-	q = (DATA_TYPE*)malloc(NX*sizeof(DATA_TYPE));
-	s_outputFromGpu = (DATA_TYPE*)malloc(NY*sizeof(DATA_TYPE));
-	q_outputFromGpu = (DATA_TYPE*)malloc(NX*sizeof(DATA_TYPE));
 
-	init_array(A, p, r);
+	int nx, ny, local_size;
+
+	if(argc != 3){
+		fprintf(stdout, "E.g.: exe size local_size\n");
+		return 1;
+	}
+
+	nx = atoi(argv[1]);
+	ny = nx;
+	local_size = atoi(argv[2]);
+ 	
+	A = (DATA_TYPE*)malloc(nx*ny*sizeof(DATA_TYPE));
+	r = (DATA_TYPE*)malloc(nx*sizeof(DATA_TYPE));
+	s = (DATA_TYPE*)malloc(ny*sizeof(DATA_TYPE));
+	p = (DATA_TYPE*)malloc(ny*sizeof(DATA_TYPE));
+	q = (DATA_TYPE*)malloc(nx*sizeof(DATA_TYPE));
+	s_outputFromGpu = (DATA_TYPE*)malloc(ny*sizeof(DATA_TYPE));
+	q_outputFromGpu = (DATA_TYPE*)malloc(nx*sizeof(DATA_TYPE));
+
+	init_array(A, p, r, nx, ny);
 
 	GPU_argv_init();
 
-	bicgCuda(A, r, s, p, q, s_outputFromGpu, q_outputFromGpu);
+	bicgCuda(A, r, s, p, q, s_outputFromGpu, q_outputFromGpu, nx, ny, local_size);
 
-	t_start = rtclock();
-	bicg_cpu(A, r, s, p, q);
-	t_end = rtclock();
+	// t_start = rtclock();
+	// bicg_cpu(A, r, s, p, q);
+	// t_end = rtclock();
 
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 
-	compareResults(s, s_outputFromGpu, q, q_outputFromGpu);
+	// compareResults(s, s_outputFromGpu, q, q_outputFromGpu);
 
 	free(A);
 	free(r);

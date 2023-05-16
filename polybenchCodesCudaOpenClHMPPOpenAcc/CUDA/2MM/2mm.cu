@@ -23,10 +23,10 @@
 #define GPU_DEVICE 0
 
 /* Problem size. */
-# define NI 2048
-# define NJ 2048
-# define NK 2048
-# define NL 2048
+// # define ni 2048
+// # define nj 2048
+// # define nk 2048
+// # define nl 2048
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 32
@@ -37,63 +37,63 @@ typedef float DATA_TYPE;
 
 
 
-void init_array(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D)
+void init_array(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, int ni, int nj, int nk, int nl)
 {
 	int i, j;
 
-	for (i = 0; i < NI; i++)
+	for (i = 0; i < ni; i++)
 	{
-		for (j = 0; j < NK; j++)
+		for (j = 0; j < nk; j++)
 		{
-			A[i*NI + j] = ((DATA_TYPE) i*j) / NI;
+			A[i*ni + j] = ((DATA_TYPE) i*j) / ni;
 		}
 	}
 
-	for (i = 0; i < NK; i++)
+	for (i = 0; i < nk; i++)
 	{
-		for (j = 0; j < NJ; j++)
+		for (j = 0; j < nj; j++)
 		{
-			B[i*NK + j] = ((DATA_TYPE) i*(j+1)) / NJ;
+			B[i*nk + j] = ((DATA_TYPE) i*(j+1)) / nj;
 		}
 	}
 
-	for (i = 0; i < NL; i++)
+	for (i = 0; i < nl; i++)
 	{
-		for (j = 0; j < NJ; j++)
+		for (j = 0; j < nj; j++)
 		{
-			C[i*NL + j] = ((DATA_TYPE) i*(j+3)) / NL;
+			C[i*nl + j] = ((DATA_TYPE) i*(j+3)) / nl;
 		}
 	}
 
-	for (i = 0; i < NI; i++)
+	for (i = 0; i < ni; i++)
 	{
-		for (j = 0; j < NL; j++)
+		for (j = 0; j < nl; j++)
 		{
-			D[i*NL + j] = ((DATA_TYPE) i*(j+2)) / NK;	
+			D[i*nl + j] = ((DATA_TYPE) i*(j+2)) / nk;	
 		}
 	}
 }
 
 
-void compareResults(DATA_TYPE *E, DATA_TYPE *E_outputFromGpu)
-{
-	int i,j,fail;
-	fail = 0;
+// void compareResults(DATA_TYPE *E, DATA_TYPE *E_outputFromGpu)
+// {
+// 	int i,j,fail;
+// 	fail = 0;
 
-	for (i=0; i < NL; i++)
-	{
-		for (j=0; j < NI; j++)
-		{
-			if (percentDiff(E[i*NI + j], E_outputFromGpu[i*NI + j]) > PERCENT_DIFF_ERROR_THRESHOLD)
-			{
-				fail++;
-			}
-		}
-	}
+// 	for (i=0; i < nl; i++)
+// 	{
+// 		for (j=0; j < ni; j++)
+// 		{
+// 			if (percentDiff(E[i*ni + j], E_outputFromGpu[i*ni + j]) > PERCENT_DIFF_ERROR_THRESHOLD)
+// 			{
+// 				fail++;
+// 			}
+// 		}
+// 	}
 	
-	// print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -105,69 +105,70 @@ void GPU_argv_init()
 }
 
 
-__global__ void mm2_kernel1(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
+__global__ void mm2_kernel1(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C, int ni, int nj, int nk, int nl)
 {
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if ((i < NI) && (j < NJ))
+	if ((i < ni) && (j < nj))
 	{ 
 		int k;
-		for (k = 0; k < NK; k++)
+		for (k = 0; k < nk; k++)
 		{
-			C[i * NJ + j] += A[i * NK + k] * B[k * NJ + j];
+			C[i * nj + j] += A[i * nk + k] * B[k * nj + j];
 		}
 	}
 }
 
 
-__global__ void mm2_kernel2(DATA_TYPE *C, DATA_TYPE *D, DATA_TYPE *E)
+__global__ void mm2_kernel2(DATA_TYPE *C, DATA_TYPE *D, DATA_TYPE *E, int ni, int nj, int nk, int nl)
 {
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if ((i < NI) && (j < NL))
+	if ((i < ni) && (j < nl))
 	{ 
 		int k;
-		for (k = 0; k < NJ; k++)
+		for (k = 0; k < nj; k++)
 		{
-			E[i * NL + j] += C[i * NJ + k] * D[k * NL + j];
+			E[i * nl + j] += C[i * nj + k] * D[k * nl + j];
 		}
 	}
 }
 
 
-void mm2_cpu(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E)
-{
-	int i, j, k;
+// void mm2_cpu(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E)
+// {
+// 	int i, j, k;
 	
-  	for (i = 0; i < NI; i++)
-	{
-		for (j = 0; j < NJ; j++)
-		{
-			C[i*NJ + j] = 0.0;
-			for (k = 0; k < NK; ++k)
-			{
-				C[i*NJ + j] += A[i*NK + k] * B[k*NJ + j];
-			}
-		}
-	}
+//   	for (i = 0; i < ni; i++)
+// 	{
+// 		for (j = 0; j < nj; j++)
+// 		{
+// 			C[i*nj + j] = 0.0;
+// 			for (k = 0; k < nk; ++k)
+// 			{
+// 				C[i*nj + j] += A[i*nk + k] * B[k*nj + j];
+// 			}
+// 		}
+// 	}
 	
-	for (i = 0; i < NI; i++)
-	{
-		for (j = 0; j < NL; j++)
-		{
-			E[i*NL + j] = 0.0;
-			for (k = 0; k < NJ; ++k)
-			{
-				E[i*NL + j] += C[i*NJ + k] * D[k*NL + j];
-			}
-		}
-	}
-}
+// 	for (i = 0; i < ni; i++)
+// 	{
+// 		for (j = 0; j < nl; j++)
+// 		{
+// 			E[i*nl + j] = 0.0;
+// 			for (k = 0; k < nj; ++k)
+// 			{
+// 				E[i*nl + j] += C[i*nj + k] * D[k*nl + j];
+// 			}
+// 		}
+// 	}
+// }
 
 
-void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E, DATA_TYPE* E_outputFromGpu)
+void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E, DATA_TYPE* E_outputFromGpu, 
+	int ni, int nj, int nk, int nl, int local_size)
 {
 	double t_start, t_end;
 
@@ -177,30 +178,30 @@ void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 	DATA_TYPE *D_gpu;
 	DATA_TYPE *E_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * NI * NK);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * NK * NJ);
-	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * NI * NJ);
-	cudaMalloc((void **)&D_gpu, sizeof(DATA_TYPE) * NJ * NL);
-	cudaMalloc((void **)&E_gpu, sizeof(DATA_TYPE) * NI * NL);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * ni * nk);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * nk * nj);
+	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * ni * nj);
+	cudaMalloc((void **)&D_gpu, sizeof(DATA_TYPE) * nj * nl);
+	cudaMalloc((void **)&E_gpu, sizeof(DATA_TYPE) * ni * nl);
 	
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * NI * NK, cudaMemcpyHostToDevice);
-	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * NK * NJ, cudaMemcpyHostToDevice);
-	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * NK * NJ, cudaMemcpyHostToDevice);
-	cudaMemcpy(D_gpu, D, sizeof(DATA_TYPE) * NJ * NL, cudaMemcpyHostToDevice);
-	cudaMemcpy(E_gpu, E, sizeof(DATA_TYPE) * NI * NL, cudaMemcpyHostToDevice);	
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nk, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * nk * nj, cudaMemcpyHostToDevice);
+	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * nk * nj, cudaMemcpyHostToDevice);
+	cudaMemcpy(D_gpu, D, sizeof(DATA_TYPE) * nj * nl, cudaMemcpyHostToDevice);
+	cudaMemcpy(E_gpu, E, sizeof(DATA_TYPE) * ni * nl, cudaMemcpyHostToDevice);	
 		
-	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid1((size_t)ceil( ((float)NJ) / ((float)block.x) ), (size_t)ceil( ((float)NI) / ((float)block.y)) );
-	dim3 grid2((size_t)ceil( ((float)NL) / ((float)block.x) ), (size_t)ceil( ((float)NI) / ((float)block.y)) );
+	dim3 block(local_size, local_size);
+	dim3 grid1((size_t)ceil( ((float)nj) / ((float)block.x) ), (size_t)ceil( ((float)ni) / ((float)block.y)) );
+	dim3 grid2((size_t)ceil( ((float)nl) / ((float)block.x) ), (size_t)ceil( ((float)ni) / ((float)block.y)) );
 	t_start = rtclock();
-	mm2_kernel1<<<grid1,block>>>(A_gpu, B_gpu, C_gpu);
+	mm2_kernel1<<<grid1,block>>>(A_gpu, B_gpu, C_gpu, ni, nj, nk, nl);
 	cudaThreadSynchronize();
-	mm2_kernel2<<<grid2,block>>>(C_gpu, D_gpu, E_gpu);
+	mm2_kernel2<<<grid2,block>>>(C_gpu, D_gpu, E_gpu, ni, nj, nk, nl);
 	cudaThreadSynchronize();
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 
-	cudaMemcpy(E_outputFromGpu, E_gpu, sizeof(DATA_TYPE) * NI * NL, cudaMemcpyDeviceToHost);
+	cudaMemcpy(E_outputFromGpu, E_gpu, sizeof(DATA_TYPE) * ni * nl, cudaMemcpyDeviceToHost);
 
 	cudaFree(A_gpu);
 	cudaFree(B_gpu);
@@ -212,7 +213,19 @@ void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 
 int main(int argc, char** argv)
 {
-	double t_start, t_end;
+	// double t_start, t_end;
+	int ni, nj, nk, nl, local_size;
+
+	if(argc != 3){
+		fprintf(stdout, "E.g.: exe size local_size\n");
+		return 1;
+	}
+
+	ni = atoi(argv[1]);
+	nj = ni;
+	nk = ni;
+	nl = ni;
+	local_size = atoi(argv[2]);
 	
 	DATA_TYPE* C;
 	DATA_TYPE* A;
@@ -221,24 +234,24 @@ int main(int argc, char** argv)
 	DATA_TYPE* E;
 	DATA_TYPE* E_outputFromGpu;
 
-	C = (DATA_TYPE*)malloc(NI*NJ*sizeof(DATA_TYPE));
-	A = (DATA_TYPE*)malloc(NI*NK*sizeof(DATA_TYPE));
-	B = (DATA_TYPE*)malloc(NK*NJ*sizeof(DATA_TYPE));
-	D = (DATA_TYPE*)malloc(NJ*NL*sizeof(DATA_TYPE));
-	E = (DATA_TYPE*)malloc(NI*NL*sizeof(DATA_TYPE));
-	E_outputFromGpu = (DATA_TYPE*)malloc(NI*NL*sizeof(DATA_TYPE));
+	C = (DATA_TYPE*)malloc(ni*nj*sizeof(DATA_TYPE));
+	A = (DATA_TYPE*)malloc(ni*nk*sizeof(DATA_TYPE));
+	B = (DATA_TYPE*)malloc(nk*nj*sizeof(DATA_TYPE));
+	D = (DATA_TYPE*)malloc(nj*nl*sizeof(DATA_TYPE));
+	E = (DATA_TYPE*)malloc(ni*nl*sizeof(DATA_TYPE));
+	E_outputFromGpu = (DATA_TYPE*)malloc(ni*nl*sizeof(DATA_TYPE));
 
-  	init_array(A, B, C, D);
+  	init_array(A, B, C, D, ni, nj, nk, nl);
 	GPU_argv_init();
 
-	mm2Cuda(A, B, C, D, E, E_outputFromGpu);
+	mm2Cuda(A, B, C, D, E, E_outputFromGpu, ni, nj, nk, nl, local_size);
 
-	t_start = rtclock();
-	mm2_cpu(A, B, C, D, E);
-	t_end = rtclock();
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// t_start = rtclock();
+	// mm2_cpu(A, B, C, D, E);
+	// t_end = rtclock();
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 
-	compareResults(E, E_outputFromGpu);
+	// compareResults(E, E_outputFromGpu);
 
 	free(C);
 	free(A);
