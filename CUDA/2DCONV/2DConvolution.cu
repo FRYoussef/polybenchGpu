@@ -31,7 +31,7 @@
 #define RUN_ON_CPU
 
 
-void conv2D(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj), DATA_TYPE POLYBENCH_2D(B, NI, NJ, ni, nj))
+void conv2D(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, ni, nj, ni, nj), DATA_TYPE POLYBENCH_2D(B, ni, nj, ni, nj))
 {
 	int i, j;
 	DATA_TYPE c11, c12, c13, c21, c22, c23, c31, c32, c33;
@@ -54,7 +54,7 @@ void conv2D(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj), DATA_TYPE
 
 
 
-void init(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj))
+void init(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, ni, nj, ni, nj))
 {
 	int i, j;
 
@@ -68,7 +68,7 @@ void init(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj))
 }
 
 
-void compareResults(int ni, int nj, DATA_TYPE POLYBENCH_2D(B, NI, NJ, ni, nj), DATA_TYPE POLYBENCH_2D(B_outputFromGpu, NI, NJ, ni, nj))
+void compareResults(int ni, int nj, DATA_TYPE POLYBENCH_2D(B, ni, nj, ni, nj), DATA_TYPE POLYBENCH_2D(B_outputFromGpu, ni, nj, ni, nj))
 {
 	int i, j, fail;
 	fail = 0;
@@ -110,27 +110,27 @@ __global__ void convolution2D_kernel(int ni, int nj, DATA_TYPE *A, DATA_TYPE *B)
 	c12 = -0.3;  c22 = +0.6;  c32 = -0.9;
 	c13 = +0.4;  c23 = +0.7;  c33 = +0.10;
 
-	if ((i < _PB_NI-1) && (j < _PB_NJ-1) && (i > 0) && (j > 0))
+	if ((i < ni-1) && (j < nj-1) && (i > 0) && (j > 0))
 	{
-		B[i * NJ + j] =  c11 * A[(i - 1) * NJ + (j - 1)]  + c21 * A[(i - 1) * NJ + (j + 0)] + c31 * A[(i - 1) * NJ + (j + 1)] 
-			+ c12 * A[(i + 0) * NJ + (j - 1)]  + c22 * A[(i + 0) * NJ + (j + 0)] +  c32 * A[(i + 0) * NJ + (j + 1)]
-			+ c13 * A[(i + 1) * NJ + (j - 1)]  + c23 * A[(i + 1) * NJ + (j + 0)] +  c33 * A[(i + 1) * NJ + (j + 1)];
+		B[i * nj + j] =  c11 * A[(i - 1) * nj + (j - 1)]  + c21 * A[(i - 1) * nj + (j + 0)] + c31 * A[(i - 1) * nj + (j + 1)] 
+			+ c12 * A[(i + 0) * nj + (j - 1)]  + c22 * A[(i + 0) * nj + (j + 0)] +  c32 * A[(i + 0) * nj + (j + 1)]
+			+ c13 * A[(i + 1) * nj + (j - 1)]  + c23 * A[(i + 1) * nj + (j + 0)] +  c33 * A[(i + 1) * nj + (j + 1)];
 	}
 }
 
 
-void convolution2DCuda(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj), DATA_TYPE POLYBENCH_2D(B, NI, NJ, ni, nj), 
-			DATA_TYPE POLYBENCH_2D(B_outputFromGpu, NI, NJ, ni, nj))
+void convolution2DCuda(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, ni, nj, ni, nj), DATA_TYPE POLYBENCH_2D(B, ni, nj, ni, nj), 
+			DATA_TYPE POLYBENCH_2D(B_outputFromGpu, ni, nj, ni, nj))
 {
 	DATA_TYPE *A_gpu;
 	DATA_TYPE *B_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * NI * NJ);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * NI * NJ);
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * NI * NJ, cudaMemcpyHostToDevice);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * ni * nj);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * ni * nj);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
 	
 	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid((size_t)ceil( ((float)NI) / ((float)block.x) ), (size_t)ceil( ((float)NJ) / ((float)block.y)) );
+	dim3 grid((size_t)ceil( ((float)ni) / ((float)block.x) ), (size_t)ceil( ((float)nj) / ((float)block.y)) );
 
   	polybench_start_instruments;
 
@@ -143,7 +143,7 @@ void convolution2DCuda(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj)
   	polybench_stop_instruments;
   	polybench_print_instruments;
 
-	cudaMemcpy(B_outputFromGpu, B_gpu, sizeof(DATA_TYPE) * NI * NJ, cudaMemcpyDeviceToHost);
+	cudaMemcpy(B_outputFromGpu, B_gpu, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyDeviceToHost);
 	
 	cudaFree(A_gpu);
 	cudaFree(B_gpu);
@@ -154,7 +154,7 @@ void convolution2DCuda(int ni, int nj, DATA_TYPE POLYBENCH_2D(A, NI, NJ, ni, nj)
    Can be used also to check the correctness of the output. */
 static
 void print_array(int ni, int nj,
-		 DATA_TYPE POLYBENCH_2D(B,NI,NJ,ni,nj))
+		 DATA_TYPE POLYBENCH_2D(B,ni,nj,ni,nj))
 {
   int i, j;
 
@@ -169,13 +169,17 @@ void print_array(int ni, int nj,
 
 int main(int argc, char *argv[])
 {
+	if(argc != 2){
+		return 1;
+	}
+	
 	/* Retrieve problem size */
-	int ni = NI;
-	int nj = NJ;
+	int ni = atoi(argv[1]);
+	int nj = ni;
 
-	POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,NI,NJ,ni,nj);
-  	POLYBENCH_2D_ARRAY_DECL(B,DATA_TYPE,NI,NJ,ni,nj);
-  	POLYBENCH_2D_ARRAY_DECL(B_outputFromGpu,DATA_TYPE,NI,NJ,ni,nj);
+	POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,ni,nj,ni,nj);
+  	POLYBENCH_2D_ARRAY_DECL(B,DATA_TYPE,ni,nj,ni,nj);
+  	POLYBENCH_2D_ARRAY_DECL(B_outputFromGpu,DATA_TYPE,ni,nj,ni,nj);
 
 	//initialize the arrays
 	init(ni, nj, POLYBENCH_ARRAY(A));
