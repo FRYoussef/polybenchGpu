@@ -1,4 +1,4 @@
-EXECUTABLE := 3mm.exe
+EXECUTABLE := 3MM.exe
 CUFILES := 3mm.cu
 
 include ../common.mk

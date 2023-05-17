@@ -1,4 +1,4 @@
-EXECUTABLE := mvt.exe
+EXECUTABLE := MVT.exe
 CUFILES := mvt.cu
 
 include ../common.mk

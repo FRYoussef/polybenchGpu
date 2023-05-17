@@ -1,0 +1,2 @@
+setting device 0 with name ‡R¢+[
+GPU Runtime: 0.000004s
