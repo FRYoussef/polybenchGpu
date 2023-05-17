@@ -51,4 +51,4 @@ if __name__ == '__main__':
     }
 
     df: pd.DataFrame = pd.DataFrame(dtimes)
-    df.to_csv(os.path.join(data_path, out_file), index=False)
+    df.to_csv(os.path.join(data_path, out_file), index=False, header=True)
