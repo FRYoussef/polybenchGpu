@@ -1,4 +1,4 @@
-EXECUTABLE := GRAMSCHMIDT.exe
+EXECUTABLE := GRAMSCHM.exe
 CUFILES := gramschmidt.cu
 
 include ../common.mk
