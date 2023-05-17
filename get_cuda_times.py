@@ -3,6 +3,7 @@ import sys
 import time
 import subprocess
 import re
+import statistics
 from typing import List, Dict
 import pandas as pd
 
@@ -22,6 +23,8 @@ if __name__ == '__main__':
     names: List[str] = ["2DConvolution", "2mm", "3DConvolution", "3mm", "Atax", "Bicg", "Correlation", "Covariance", "Fdtd2d", "Gemm", "Gesummv", "Mvt", "Syr2k", "Syrk"]    
     params: List[int] = [4096, 512, 512, 512, 4096, 8192, 512, 512, 512, 512, 4096, 512, 8192, 512, 512]
     times: Dict[str, List[float]] = dict()
+    std_devs: List[float] = list()
+    means: List[float] = list()
     iterations: int = 10
     pattern = r"GPU Runtime: (\d+\.\d+)s"
 
@@ -34,7 +37,18 @@ if __name__ == '__main__':
             output = output.decode("utf-8")
             match = re.search(pattern, output)
             times[test].append(float(match.group(1)))
+    
+        std_devs.append(statistics.stdev(times[test]))
+        means.append(statistics.mean(times[test]))
 
-    print(times)
+    dtimes: Dict = {
+        "name": names,
+        "size": params,
+        "iterations": [10]*len(names),
+        "mean_time": means,
+        "stddev_time": std_devs,
+        "times": list(times.values())
+    }
 
-
+    df: pd.DataFrame = pd.DataFrame(dtimes)
+    df.to_csv(os.path.join(data_path, out_file), index=False)
