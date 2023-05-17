@@ -24,7 +24,7 @@
 #define GPU_DEVICE 0
 
 /* Problem size */
-#define N 4096
+// #define n 4096
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 256
@@ -39,57 +39,57 @@ typedef float DATA_TYPE;
 
 
 
-void gesummv(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *x, DATA_TYPE *y, DATA_TYPE *tmp)
-{
-	int i, j;
+// void gesummv(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *x, DATA_TYPE *y, DATA_TYPE *tmp)
+// {
+// 	int i, j;
 	
-	for (i = 0; i < N; i++)
-	{
-		tmp[i] = 0;
-		y[i] = 0;
-		for (j = 0; j < N; j++)
-		{
-			tmp[i] = A[i*N + j] * x[j] + tmp[i];
-			y[i] = B[i*N + j] * x[j] + y[i];
-		}
+// 	for (i = 0; i < n; i++)
+// 	{
+// 		tmp[i] = 0;
+// 		y[i] = 0;
+// 		for (j = 0; j < n; j++)
+// 		{
+// 			tmp[i] = A[i*n + j] * x[j] + tmp[i];
+// 			y[i] = B[i*n + j] * x[j] + y[i];
+// 		}
 		
-		y[i] = ALPHA * tmp[i] + BETA * y[i];
-	}
-}
+// 		y[i] = ALPHA * tmp[i] + BETA * y[i];
+// 	}
+// }
 
 
-void init(DATA_TYPE* A, DATA_TYPE* x)
+void init(DATA_TYPE* A, DATA_TYPE* x, int n)
 {
   	int i, j;
 
- 	for (i = 0; i < N; i++)
+ 	for (i = 0; i < n; i++)
     {
-    	x[i] = ((DATA_TYPE) i) / N;
+    	x[i] = ((DATA_TYPE) i) / n;
       	
-		for (j = 0; j < N; j++) 
+		for (j = 0; j < n; j++) 
 		{
-			A[i*N + j] = ((DATA_TYPE) i*j) / N;
+			A[i*n + j] = ((DATA_TYPE) i*j) / n;
 		}
     }
 }
 
 
-void compareResults(DATA_TYPE* y, DATA_TYPE* y_outputFromGpu)
-{
-	int i, fail;
-	fail = 0;
+// void compareResults(DATA_TYPE* y, DATA_TYPE* y_outputFromGpu)
+// {
+// 	int i, fail;
+// 	fail = 0;
 	
-	for (i=0; i<(N); i++) 
-	{
-		if (percentDiff(y[i], y_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD) 
-		{
-			fail++;
-		}
-	}
+// 	for (i=0; i<(n); i++) 
+// 	{
+// 		if (percentDiff(y[i], y_outputFromGpu[i]) > PERCENT_DIFF_ERROR_THRESHOLD) 
+// 		{
+// 			fail++;
+// 		}
+// 	}
 	
-	// Print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// Print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -101,23 +101,23 @@ void GPU_argv_init()
 }
 
 
-__global__ void gesummv_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *x, DATA_TYPE *y, DATA_TYPE *tmp)
+__global__ void gesummv_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *x, DATA_TYPE *y, DATA_TYPE *tmp, int n)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (i < N)
+	if (i < n)
 	{
 		int j;
-		for(j = 0; j < N; j++)
+		for(j = 0; j < n; j++)
 		{	
-			tmp[i] += a[i * N + j] * x[j];
-			y[i] += b[i * N + j] * x[j];
+			tmp[i] += a[i * n + j] * x[j];
+			y[i] += b[i * n + j] * x[j];
 		}
 		y[i] = ALPHA * tmp[i] + BETA * y[i];
 	}
 }
 
-void gesummvCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE* y_outputFromGpu)
+void gesummvCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE* y_outputFromGpu, int n)
 {
 	double t_start, t_end;		
 
@@ -127,27 +127,27 @@ void gesummvCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* x, DATA_TYPE* y, DATA_TY
 	DATA_TYPE *y_gpu;
 	DATA_TYPE *tmp_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * N * N);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * N * N);
-	cudaMalloc((void **)&x_gpu, sizeof(DATA_TYPE) * N);
-	cudaMalloc((void **)&y_gpu, sizeof(DATA_TYPE) * N);
-	cudaMalloc((void **)&tmp_gpu, sizeof(DATA_TYPE) * N);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * n * n);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * n * n);
+	cudaMalloc((void **)&x_gpu, sizeof(DATA_TYPE) * n);
+	cudaMalloc((void **)&y_gpu, sizeof(DATA_TYPE) * n);
+	cudaMalloc((void **)&tmp_gpu, sizeof(DATA_TYPE) * n);
 	
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * N * N, cudaMemcpyHostToDevice);
-	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * N * N, cudaMemcpyHostToDevice);
-	cudaMemcpy(x_gpu, x, sizeof(DATA_TYPE) * N, cudaMemcpyHostToDevice);
-	cudaMemcpy(y_gpu, y, sizeof(DATA_TYPE) * N, cudaMemcpyHostToDevice);
-	cudaMemcpy(tmp_gpu, tmp, sizeof(DATA_TYPE) * N, cudaMemcpyHostToDevice);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * n * n, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * n * n, cudaMemcpyHostToDevice);
+	cudaMemcpy(x_gpu, x, sizeof(DATA_TYPE) * n, cudaMemcpyHostToDevice);
+	cudaMemcpy(y_gpu, y, sizeof(DATA_TYPE) * n, cudaMemcpyHostToDevice);
+	cudaMemcpy(tmp_gpu, tmp, sizeof(DATA_TYPE) * n, cudaMemcpyHostToDevice);
 
 	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid((unsigned int)ceil( ((float)N) / ((float)block.x) ), 1);
+	dim3 grid((unsigned int)ceil( ((float)n) / ((float)block.x) ), 1);
 
 
 	t_start = rtclock();
-	gesummv_kernel<<< grid, block>>>(A_gpu,B_gpu,x_gpu, y_gpu, tmp_gpu);
+	gesummv_kernel<<< grid, block>>>(A_gpu,B_gpu,x_gpu, y_gpu, tmp_gpu, n);
 	cudaThreadSynchronize();
 	t_end = rtclock();
-	cudaMemcpy(y_outputFromGpu, y_gpu, sizeof(DATA_TYPE) * N, cudaMemcpyDeviceToHost);
+	cudaMemcpy(y_outputFromGpu, y_gpu, sizeof(DATA_TYPE) * n, cudaMemcpyDeviceToHost);
 
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 }
@@ -155,7 +155,7 @@ void gesummvCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* x, DATA_TYPE* y, DATA_TY
 
 int main(int argc, char *argv[])
 {
-	double t_start, t_end;
+	// double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* B;  
@@ -163,25 +163,34 @@ int main(int argc, char *argv[])
 	DATA_TYPE* y;
 	DATA_TYPE* y_outputFromGpu;
 	DATA_TYPE* tmp;
-	
-	A = (DATA_TYPE*)malloc(N*N*sizeof(DATA_TYPE));
-	B = (DATA_TYPE*)malloc(N*N*sizeof(DATA_TYPE));
-	x = (DATA_TYPE*)malloc(N*sizeof(DATA_TYPE)); 
-	y = (DATA_TYPE*)malloc(N*sizeof(DATA_TYPE));
-	y_outputFromGpu = (DATA_TYPE*)malloc(N*sizeof(DATA_TYPE));
-	tmp = (DATA_TYPE*)malloc(N*sizeof(DATA_TYPE));
 
-	init(A, x);
+	int n;
+
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
+		return 1;
+	}
+
+	n = atoi(argv[1]);
+	
+	A = (DATA_TYPE*)malloc(n*n*sizeof(DATA_TYPE));
+	B = (DATA_TYPE*)malloc(n*n*sizeof(DATA_TYPE));
+	x = (DATA_TYPE*)malloc(n*sizeof(DATA_TYPE)); 
+	y = (DATA_TYPE*)malloc(n*sizeof(DATA_TYPE));
+	y_outputFromGpu = (DATA_TYPE*)malloc(n*sizeof(DATA_TYPE));
+	tmp = (DATA_TYPE*)malloc(n*sizeof(DATA_TYPE));
+
+	init(A, x, n);
 	
 	GPU_argv_init();
-	gesummvCuda(A, B, x, y, tmp, y_outputFromGpu);
+	gesummvCuda(A, B, x, y, tmp, y_outputFromGpu, n);
 	
-	t_start = rtclock();
-	gesummv(A, B, x, y, tmp);
-	t_end = rtclock();
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// t_start = rtclock();
+	// gesummv(A, B, x, y, tmp);
+	// t_end = rtclock();
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	compareResults(y, y_outputFromGpu);
+	// compareResults(y, y_outputFromGpu);
 
 	free(A);
 	free(B);  

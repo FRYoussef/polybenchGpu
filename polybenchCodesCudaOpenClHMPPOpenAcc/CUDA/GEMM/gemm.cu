@@ -24,9 +24,9 @@
 #define PERCENT_DIFF_ERROR_THRESHOLD 0.05
 
 /* Problem size */
-#define NI 512
-#define NJ 512
-#define NK 512
+// #define ni 512
+// #define nj 512
+// #define nk 512
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 32
@@ -41,75 +41,75 @@ typedef float DATA_TYPE;
 
 
 
-void gemm(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
-{
-	int i,j,k;
+// void gemm(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
+// {
+// 	int i,j,k;
 	
-	for (i = 0; i < NI; i++)
-	{
-    	for (j = 0; j < NJ; j++)
-    	{
-			C[i*NJ + j] *= BETA;
+// 	for (i = 0; i < ni; i++)
+// 	{
+//     	for (j = 0; j < nj; j++)
+//     	{
+// 			C[i*nj + j] *= BETA;
 	
-			for (k = 0; k < NK; ++k)
-			{
-	  			C[i*NJ + j] += ALPHA * A[i*NK + k] * B[k*NJ + j];
-			}
-      	}
-	}
-}
+// 			for (k = 0; k < nk; ++k)
+// 			{
+// 	  			C[i*nj + j] += ALPHA * A[i*nk + k] * B[k*nj + j];
+// 			}
+//       	}
+// 	}
+// }
 
 
-void init(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
+void init(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C, int ni, int nj, int nk)
 {
 	int i, j;
 
-  	for (i = 0; i < NI; i++)
+  	for (i = 0; i < ni; i++)
 	{
-    	for (j = 0; j < NK; j++)
+    	for (j = 0; j < nk; j++)
 		{
-      		A[i*NK + j] = ((DATA_TYPE) i*j) / NI;
+      		A[i*nk + j] = ((DATA_TYPE) i*j) / ni;
 		}
 	}
 
-  	for (i = 0; i < NK; i++)
+  	for (i = 0; i < nk; i++)
 	{
-    	for (j = 0; j < NJ; j++)
+    	for (j = 0; j < nj; j++)
 		{
-      		B[i*NJ + j] = ((DATA_TYPE) i*j + 1) / NJ;
+      		B[i*nj + j] = ((DATA_TYPE) i*j + 1) / nj;
 		}
 	}
 
-  	for (i = 0; i < NI; i++)
+  	for (i = 0; i < ni; i++)
 	{
-    	for (j = 0; j < NJ; j++)
+    	for (j = 0; j < nj; j++)
 		{
-      		C[i*NJ + j] = ((DATA_TYPE) i*j + 2) / NJ;
+      		C[i*nj + j] = ((DATA_TYPE) i*j + 2) / nj;
 		}
 	}
 }
 
 
-void compareResults(DATA_TYPE* C, DATA_TYPE* C_outputFromGpu)
-{
-	int i, j, fail;
-	fail = 0;
+// void compareResults(DATA_TYPE* C, DATA_TYPE* C_outputFromGpu)
+// {
+// 	int i, j, fail;
+// 	fail = 0;
 	
-	// Compare C1 and C2
-	for (i=0; i < NI; i++) 
-	{
-		for (j=0; j < NJ; j++) 
-		{
-			if (percentDiff(C[i*NJ + j], C_outputFromGpu[i*NJ + j]) > PERCENT_DIFF_ERROR_THRESHOLD) 
-			{
-				fail++;
-			}
-		}
-	}
+// 	// Compare C1 and C2
+// 	for (i=0; i < ni; i++) 
+// 	{
+// 		for (j=0; j < nj; j++) 
+// 		{
+// 			if (percentDiff(C[i*nj + j], C_outputFromGpu[i*nj + j]) > PERCENT_DIFF_ERROR_THRESHOLD) 
+// 			{
+// 				fail++;
+// 			}
+// 		}
+// 	}
 	
-	// Print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// Print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -121,24 +121,24 @@ void GPU_argv_init()
 }
 
 
-__global__ void gemm_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *c)
+__global__ void gemm_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *c, int ni, int nj, int nk)
 {
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if ((i < NI) && (j < NJ))
+	if ((i < ni) && (j < nj))
 	{	
-		c[i * NJ + j] *= BETA;
+		c[i * nj + j] *= BETA;
 		int k;
-		for(k=0; k < NK; k++)
+		for(k=0; k < nk; k++)
 		{
-			c[i * NJ + j] += ALPHA * a[i * NK + k] * b[k * NJ +j];
+			c[i * nj + j] += ALPHA * a[i * nk + k] * b[k * nj +j];
 		}
 	}
 }
 
 
-void gemmCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromGpu)
+void gemmCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromGpu, int ni, int nj, int nk)
 {
 	double t_start, t_end;
 
@@ -146,26 +146,26 @@ void gemmCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromG
 	DATA_TYPE *B_gpu;
 	DATA_TYPE *C_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * NI * NK);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * NK * NJ);
-	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * NI * NJ);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * ni * nk);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * nk * nj);
+	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * ni * nj);
 	
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * NI * NK, cudaMemcpyHostToDevice);
-	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * NK * NJ, cudaMemcpyHostToDevice);
-	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * NI * NJ, cudaMemcpyHostToDevice);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nk, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * nk * nj, cudaMemcpyHostToDevice);
+	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
 	
 	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid((size_t)(ceil( ((float)NI)/ ((float)block.x) )),(size_t)(ceil( ((float)NJ)/ ((float)block.y) )));
+	dim3 grid((size_t)(ceil( ((float)ni)/ ((float)block.x) )),(size_t)(ceil( ((float)nj)/ ((float)block.y) )));
 
 	t_start = rtclock();
 
-	gemm_kernel<<< grid, block >>>(A_gpu, B_gpu, C_gpu);
+	gemm_kernel<<< grid, block >>>(A_gpu, B_gpu, C_gpu, ni, nj, nk);
 	cudaThreadSynchronize();
 
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 
-	cudaMemcpy(C_outputFromGpu, C_gpu, sizeof(DATA_TYPE) * NI * NJ, cudaMemcpyDeviceToHost);    
+	cudaMemcpy(C_outputFromGpu, C_gpu, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyDeviceToHost);    
 	
 	cudaFree(A_gpu);
 	cudaFree(B_gpu);
@@ -175,30 +175,41 @@ void gemmCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromG
 
 int main(int argc, char *argv[])
 {
-	double t_start, t_end;
+	// double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* B;  
 	DATA_TYPE* C;  
-	DATA_TYPE* C_outputFromGpu; 
+	DATA_TYPE* C_outputFromGpu;
 
-	A = (DATA_TYPE*)malloc(NI*NK*sizeof(DATA_TYPE)); 
-	B = (DATA_TYPE*)malloc(NK*NJ*sizeof(DATA_TYPE));   
-	C = (DATA_TYPE*)malloc(NI*NJ*sizeof(DATA_TYPE)); 
-	C_outputFromGpu = (DATA_TYPE*)malloc(NI*NJ*sizeof(DATA_TYPE)); 
+	int ni, nj, nk;
 
-	init(A, B, C);
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
+		return 1;
+	}
+
+	ni = atoi(argv[1]);
+	nj = ni;
+	nk = ni;
+
+	A = (DATA_TYPE*)malloc(ni*nk*sizeof(DATA_TYPE)); 
+	B = (DATA_TYPE*)malloc(nk*nj*sizeof(DATA_TYPE));   
+	C = (DATA_TYPE*)malloc(ni*nj*sizeof(DATA_TYPE)); 
+	C_outputFromGpu = (DATA_TYPE*)malloc(ni*nj*sizeof(DATA_TYPE)); 
+
+	init(A, B, C, ni, nj, nk);
 	
 	GPU_argv_init();
 	
-	gemmCuda(A, B, C, C_outputFromGpu);
+	gemmCuda(A, B, C, C_outputFromGpu, ni, nj, nk);
 
-	t_start = rtclock();	
-	gemm(A, B, C);
-	t_end = rtclock();
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// t_start = rtclock();	
+	// gemm(A, B, C);
+	// t_end = rtclock();
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	compareResults(C, C_outputFromGpu);
+	// compareResults(C, C_outputFromGpu);
 
 	free(A);
 	free(B);  

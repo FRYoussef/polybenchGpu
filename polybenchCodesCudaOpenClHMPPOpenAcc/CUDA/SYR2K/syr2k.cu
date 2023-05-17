@@ -23,8 +23,8 @@
 #define GPU_DEVICE 0
 
 /* Problem size */
-#define N 2048
-#define M 2048
+// #define n 2048
+// #define m 2048
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 32
@@ -39,72 +39,72 @@ typedef float DATA_TYPE;
 
 
 
-void init_arrays(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
-{
-	int i, j;
+// void init_arrays(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
+// {
+// 	int i, j;
   
-	for (i = 0; i < N; i++)
-    	{
-    		for (j = 0; j < N; j++)
-		{
-			C[i*N + j] = ((DATA_TYPE) i*j + 2) / N;
-		}
+// 	for (i = 0; i < n; i++)
+//     	{
+//     		for (j = 0; j < n; j++)
+// 		{
+// 			C[i*n + j] = ((DATA_TYPE) i*j + 2) / n;
+// 		}
       	
-		for (j = 0; j < M; j++)
-		{
-	  		A[i*N + j] = ((DATA_TYPE) i*j) / N;
-	  		B[i*N + j] = ((DATA_TYPE) i*j + 1) / N;
-		}
-    	}
-}
+// 		for (j = 0; j < m; j++)
+// 		{
+// 	  		A[i*n + j] = ((DATA_TYPE) i*j) / n;
+// 	  		B[i*n + j] = ((DATA_TYPE) i*j + 1) / n;
+// 		}
+//     	}
+// }
 
 
-void syr2k(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
-{
-	int i, j, k;
+// void syr2k(DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C)
+// {
+// 	int i, j, k;
 		
-  	for (i = 0; i < N; i++)
-	{
-   		for (j = 0; j < N; j++)
-		{
-     			C[i*N + j] *= BETA;
-		}
-	}
+//   	for (i = 0; i < n; i++)
+// 	{
+//    		for (j = 0; j < n; j++)
+// 		{
+//      			C[i*n + j] *= BETA;
+// 		}
+// 	}
 
-  	for (i = 0; i < N; i++)
-	{
-   		for (j = 0; j < N; j++)
-		{
-      			for (k = 0; k < M; k++)
-			{
-	  			C[i*N + j] += ALPHA * A[i*M + k] * B[j*M + k];
-	 		 	C[i*N + j] += ALPHA * B[i*M + k] * A[j*M + k];
-			}
-		}
-	}
-}
+//   	for (i = 0; i < n; i++)
+// 	{
+//    		for (j = 0; j < n; j++)
+// 		{
+//       			for (k = 0; k < m; k++)
+// 			{
+// 	  			C[i*n + j] += ALPHA * A[i*m + k] * B[j*m + k];
+// 	 		 	C[i*n + j] += ALPHA * B[i*m + k] * A[j*m + k];
+// 			}
+// 		}
+// 	}
+// }
 
 
-void compareResults(DATA_TYPE *C, DATA_TYPE *C_outputFromGpu)
-{
-	int i,j,fail;
-	fail = 0;
+// void compareResults(DATA_TYPE *C, DATA_TYPE *C_outputFromGpu)
+// {
+// 	int i,j,fail;
+// 	fail = 0;
 
-	// Compare C with D
-	for (i=0; i<N; i++)
-	{
-		for (j=0; j<N; j++)
-		{
-			if (percentDiff(C[i*N + j], C_outputFromGpu[i*N + j]) > PERCENT_DIFF_ERROR_THRESHOLD)
-			{ 
-				fail++;
-			}
-		}
-	}
+// 	// Compare C with D
+// 	for (i=0; i<n; i++)
+// 	{
+// 		for (j=0; j<n; j++)
+// 		{
+// 			if (percentDiff(C[i*n + j], C_outputFromGpu[i*n + j]) > PERCENT_DIFF_ERROR_THRESHOLD)
+// 			{ 
+// 				fail++;
+// 			}
+// 		}
+// 	}
 	
-	// print results
-	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
-}
+// 	// print results
+// 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
+// }
 
 
 void GPU_argv_init()
@@ -116,25 +116,25 @@ void GPU_argv_init()
 }
 
 
-__global__ void syr2k_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *c)
+__global__ void syr2k_kernel(DATA_TYPE *a, DATA_TYPE *b, DATA_TYPE *c, int n, int m)
 {
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if ((i < N) && (j < N))
+	if ((i < n) && (j < n))
 	{
-		c[i * N + j] *= BETA;
+		c[i * n + j] *= BETA;
 		
 		int k;
-		for(k = 0; k < M; k++)
+		for(k = 0; k < m; k++)
 		{
-			c[i * N + j] += ALPHA * a[i * M + k] * b[j * M + k] + ALPHA * b[i * M + k] * a[j * M + k];
+			c[i * n + j] += ALPHA * a[i * m + k] * b[j * m + k] + ALPHA * b[i * m + k] * a[j * m + k];
 		}
 	}
 }
 
 
-void syr2kCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromGpu) 
+void syr2kCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFromGpu, int n, int m) 
 {
 	double t_start, t_end;
 
@@ -142,23 +142,23 @@ void syr2kCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFrom
 	DATA_TYPE *B_gpu;
 	DATA_TYPE *C_gpu;
 
-	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * N * M);
-	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * N * M);
-	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * N * N);
-	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * N * M, cudaMemcpyHostToDevice);
-	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * N * M, cudaMemcpyHostToDevice);
-	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * N * N, cudaMemcpyHostToDevice);
+	cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * n * m);
+	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * n * m);
+	cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * n * n);
+	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * n * m, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * n * m, cudaMemcpyHostToDevice);
+	cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * n * n, cudaMemcpyHostToDevice);
 	
 	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
-	dim3 grid((size_t)ceil( ((float)N) / ((float)DIM_THREAD_BLOCK_X) ), (size_t)(ceil( ((float)N) / ((float)DIM_THREAD_BLOCK_Y) )));
+	dim3 grid((size_t)ceil( ((float)n) / ((float)DIM_THREAD_BLOCK_X) ), (size_t)(ceil( ((float)n) / ((float)DIM_THREAD_BLOCK_Y) )));
 	
 	t_start = rtclock();
-	syr2k_kernel<<<grid,block>>>(A_gpu,B_gpu,C_gpu);
+	syr2k_kernel<<<grid,block>>>(A_gpu,B_gpu,C_gpu, n, m);
 	cudaThreadSynchronize();
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	cudaMemcpy(C_outputFromGpu, C_gpu, sizeof(DATA_TYPE) * N * N, cudaMemcpyDeviceToHost);
+	cudaMemcpy(C_outputFromGpu, C_gpu, sizeof(DATA_TYPE) * n * n, cudaMemcpyDeviceToHost);
 
 	cudaFree(A_gpu);
 	cudaFree(B_gpu);
@@ -166,31 +166,41 @@ void syr2kCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* C_outputFrom
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
-	double t_start, t_end;
+	// double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* B;
 	DATA_TYPE* C;
 	DATA_TYPE* C_outputFromGpu;
 
-	A = (DATA_TYPE*)malloc(N*M*sizeof(DATA_TYPE));
-	B = (DATA_TYPE*)malloc(N*M*sizeof(DATA_TYPE));
-	C = (DATA_TYPE*)malloc(N*M*sizeof(DATA_TYPE));
-	C_outputFromGpu = (DATA_TYPE*)malloc(N*M*sizeof(DATA_TYPE));
+	int m, n;
 
-	init_arrays(A, B, C);
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
+		return 1;
+	}
+
+	m = atoi(argv[1]);
+	n = m;
+
+	A = (DATA_TYPE*)malloc(n*m*sizeof(DATA_TYPE));
+	B = (DATA_TYPE*)malloc(n*m*sizeof(DATA_TYPE));
+	C = (DATA_TYPE*)malloc(n*m*sizeof(DATA_TYPE));
+	C_outputFromGpu = (DATA_TYPE*)malloc(n*m*sizeof(DATA_TYPE));
+
+	// init_arrays(A, B, C);
     
 	GPU_argv_init();
-	syr2kCuda(A, B, C, C_outputFromGpu);
+	syr2kCuda(A, B, C, C_outputFromGpu, n, m);
 	
-	t_start = rtclock();
-	syr2k(A, B, C);
-	t_end = rtclock();
-	fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
+	// t_start = rtclock();
+	// syr2k(A, B, C);
+	// t_end = rtclock();
+	// fprintf(stdout, "CPU Runtime: %0.6lfs\n", t_end - t_start);
 
-	compareResults(C, C_outputFromGpu);
+	// compareResults(C, C_outputFromGpu);
 
 	free(A);
 	free(B);

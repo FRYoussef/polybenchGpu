@@ -30,8 +30,8 @@
 // # define nm 512
 
 /* Thread block dimensions */
-// #define local_size 32
-// #define local_size 8
+#define DIM_THREAD_BLOCK_X 32
+#define DIM_THREAD_BLOCK_Y 8
 
 /* Can switch DATA_TYPE between float and double */
 typedef float DATA_TYPE;
@@ -200,7 +200,7 @@ __global__ void mm3_kernel3(DATA_TYPE *E, DATA_TYPE *F, DATA_TYPE *G, int ni, in
 
 
 void mm3Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E, DATA_TYPE* F, 
-		DATA_TYPE* G, DATA_TYPE* G_outputFromGpu, int ni, int nj, int nk, int nl, int nm, int local_size)
+		DATA_TYPE* G, DATA_TYPE* G_outputFromGpu, int ni, int nj, int nk, int nl, int nm)
 {
 	double t_start, t_end;
 
@@ -228,10 +228,10 @@ void mm3Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 	cudaMemcpy(F_gpu, F, sizeof(DATA_TYPE) * nj * nl, cudaMemcpyHostToDevice);
 	cudaMemcpy(G_gpu, G, sizeof(DATA_TYPE) * ni * nl, cudaMemcpyHostToDevice);	
 	
-	dim3 block(local_size, local_size);
-	dim3 grid1((size_t)(ceil( ((float)nj) / ((float)local_size) )),(size_t)(ceil((float)ni/ ((float)local_size) )));
-	dim3 grid2((size_t)(ceil( ((float)nl) / ((float)local_size) )),(size_t)(ceil((float)nj/ ((float)local_size) )));
-	dim3 grid3((size_t)(ceil( ((float)nl) / ((float)local_size) )),(size_t)(ceil((float)ni/ ((float)local_size) )));
+	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
+	dim3 grid1((size_t)(ceil( ((float)nj) / ((float)DIM_THREAD_BLOCK_X) )),(size_t)(ceil((float)ni/ ((float)DIM_THREAD_BLOCK_Y) )));
+	dim3 grid2((size_t)(ceil( ((float)nl) / ((float)DIM_THREAD_BLOCK_X) )),(size_t)(ceil((float)nj/ ((float)DIM_THREAD_BLOCK_Y) )));
+	dim3 grid3((size_t)(ceil( ((float)nl) / ((float)DIM_THREAD_BLOCK_X) )),(size_t)(ceil((float)ni/ ((float)DIM_THREAD_BLOCK_Y) )));
 
 	t_start = rtclock();
 	mm3_kernel1<<<grid1,block>>>(A_gpu, B_gpu, E_gpu, ni, nj, nk, nl, nm);
@@ -268,10 +268,10 @@ int main(int argc, char** argv)
 	DATA_TYPE* G;
 	DATA_TYPE* G_outputFromGpu;
 
-	int ni, nj, nk, nl, nm, local_size;
+	int ni, nj, nk, nl, nm;
 
-	if(argc != 3){
-		fprintf(stdout, "E.g.: exe size local_size\n");
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
 
@@ -280,7 +280,6 @@ int main(int argc, char** argv)
 	nk = ni;
 	nl = ni;
 	nm = ni;
-	local_size = atoi(argv[2]);
 
 	A = (DATA_TYPE*)malloc(ni*nk*sizeof(DATA_TYPE));
 	B = (DATA_TYPE*)malloc(nk*nj*sizeof(DATA_TYPE));
@@ -295,7 +294,7 @@ int main(int argc, char** argv)
 
 	GPU_argv_init();
 
-	mm3Cuda(A, B, C, D, E, F, G, G_outputFromGpu, ni, nj, nk, nl, nm, local_size);
+	mm3Cuda(A, B, C, D, E, F, G, G_outputFromGpu, ni, nj, nk, nl, nm);
 
 	// t_start = rtclock();
 

@@ -27,8 +27,8 @@
 // #define ny 4096
 
 // /* Thread block dimensions */
-// #define local_size 256
-// #define local_size 1
+#define DIM_THREAD_BLOCK_X 256
+#define DIM_THREAD_BLOCK_Y 1
 
 #ifndef M_PI
 #define M_PI 3.14159
@@ -136,7 +136,7 @@ __global__ void atax_kernel2(DATA_TYPE *A, DATA_TYPE *y, DATA_TYPE *tmp, int nx,
 // }
 
 
-void ataxGpu(DATA_TYPE* A, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE* y_outputFromGpu, int nx, int ny, int local_size)
+void ataxGpu(DATA_TYPE* A, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE* y_outputFromGpu, int nx, int ny)
 {
 	double t_start, t_end;
 
@@ -155,7 +155,7 @@ void ataxGpu(DATA_TYPE* A, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE
 	cudaMemcpy(y_gpu, y, sizeof(DATA_TYPE) * ny, cudaMemcpyHostToDevice);
 	cudaMemcpy(tmp_gpu, tmp, sizeof(DATA_TYPE) * nx, cudaMemcpyHostToDevice);
 	
-	dim3 block(local_size, local_size);
+	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
 	dim3 grid1((size_t)(ceil( ((float)nx) / ((float)block.x) )), 1);
 	dim3 grid2((size_t)(ceil( ((float)ny) / ((float)block.x) )), 1);
 
@@ -186,16 +186,15 @@ int main(int argc, char** argv)
 	DATA_TYPE* y_outputFromGpu;
 	DATA_TYPE* tmp;
 
-	int nx, ny, local_size;
+	int nx, ny;
 
-	if(argc != 3){
-		fprintf(stdout, "E.g.: exe size local_size\n");
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
 
 	nx = atoi(argv[1]);
 	ny = nx;
-	local_size = atoi(argv[2]);
 
 	A = (DATA_TYPE*)malloc(nx*ny*sizeof(DATA_TYPE));
 	x = (DATA_TYPE*)malloc(ny*sizeof(DATA_TYPE));
@@ -206,7 +205,7 @@ int main(int argc, char** argv)
 	init_array(x, A, nx, ny);
 
 	GPU_argv_init();
-	ataxGpu(A, x, y, tmp, y_outputFromGpu, nx, ny, local_size);
+	ataxGpu(A, x, y, tmp, y_outputFromGpu, nx, ny);
 	
 	// t_start = rtclock();
 	// atax_cpu(A, x, y, tmp);

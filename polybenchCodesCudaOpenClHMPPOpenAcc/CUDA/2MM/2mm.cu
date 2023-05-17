@@ -168,7 +168,7 @@ __global__ void mm2_kernel2(DATA_TYPE *C, DATA_TYPE *D, DATA_TYPE *E, int ni, in
 
 
 void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* E, DATA_TYPE* E_outputFromGpu, 
-	int ni, int nj, int nk, int nl, int local_size)
+	int ni, int nj, int nk, int nl)
 {
 	double t_start, t_end;
 
@@ -190,7 +190,7 @@ void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 	cudaMemcpy(D_gpu, D, sizeof(DATA_TYPE) * nj * nl, cudaMemcpyHostToDevice);
 	cudaMemcpy(E_gpu, E, sizeof(DATA_TYPE) * ni * nl, cudaMemcpyHostToDevice);	
 		
-	dim3 block(local_size, local_size);
+	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
 	dim3 grid1((size_t)ceil( ((float)nj) / ((float)block.x) ), (size_t)ceil( ((float)ni) / ((float)block.y)) );
 	dim3 grid2((size_t)ceil( ((float)nl) / ((float)block.x) ), (size_t)ceil( ((float)ni) / ((float)block.y)) );
 	t_start = rtclock();
@@ -214,10 +214,10 @@ void mm2Cuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 int main(int argc, char** argv)
 {
 	// double t_start, t_end;
-	int ni, nj, nk, nl, local_size;
+	int ni, nj, nk, nl;
 
-	if(argc != 3){
-		fprintf(stdout, "E.g.: exe size local_size\n");
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
 
@@ -225,7 +225,6 @@ int main(int argc, char** argv)
 	nj = ni;
 	nk = ni;
 	nl = ni;
-	local_size = atoi(argv[2]);
 	
 	DATA_TYPE* C;
 	DATA_TYPE* A;
@@ -244,7 +243,7 @@ int main(int argc, char** argv)
   	init_array(A, B, C, D, ni, nj, nk, nl);
 	GPU_argv_init();
 
-	mm2Cuda(A, B, C, D, E, E_outputFromGpu, ni, nj, nk, nl, local_size);
+	mm2Cuda(A, B, C, D, E, E_outputFromGpu, ni, nj, nk, nl);
 
 	// t_start = rtclock();
 	// mm2_cpu(A, B, C, D, E);

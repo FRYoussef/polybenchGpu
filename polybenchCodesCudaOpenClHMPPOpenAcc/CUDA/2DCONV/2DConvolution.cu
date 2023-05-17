@@ -124,7 +124,7 @@ __global__ void Convolution2D_kernel(DATA_TYPE *A, DATA_TYPE *B, int ni, int nj)
 }
 
 
-void convolution2DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, int ni, int nj, int local_size)
+void convolution2DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, int ni, int nj)
 {
 	double t_start, t_end;
 
@@ -135,7 +135,7 @@ void convolution2DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, i
 	cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * ni * nj);
 	cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
 	
-	dim3 block(local_size, local_size);
+	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
 	dim3 grid((size_t)ceil( ((float)ni) / ((float)block.x) ), (size_t)ceil( ((float)nj) / ((float)block.y)) );
 	t_start = rtclock();
 	Convolution2D_kernel<<<grid,block>>>(A_gpu,B_gpu, ni, nj);
@@ -152,23 +152,22 @@ void convolution2DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, i
 
 int main(int argc, char *argv[])
 {
-	int ni, nj, local_size;
+	int ni, nj;
 	//double t_start, t_end;
 
 	DATA_TYPE* A;
 	DATA_TYPE* B;  
 	DATA_TYPE* B_outputFromGpu;
 
-	int ni, nj, local_size;
+	int ni, nj;
 
-	if(argc != 3){
-		fprintf(stdout, "E.g.: exe size local_size\n");
+	if(argc != 2){
+		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
 
 	ni = atoi(argv[1]);
 	nj = ni;
-	local_size = atoi(argv[2]);
 	
 	A = (DATA_TYPE*)malloc(ni*nj*sizeof(DATA_TYPE));
 	B = (DATA_TYPE*)malloc(ni*nj*sizeof(DATA_TYPE));
@@ -179,7 +178,7 @@ int main(int argc, char *argv[])
 	
 	GPU_argv_init();
 
-	convolution2DCuda(A, B, B_outputFromGpu, ni, nj, local_size);
+	convolution2DCuda(A, B, B_outputFromGpu, ni, nj);
 	
 	// t_start = rtclock();
 	// conv2D(A, B, ni, nj);

@@ -144,7 +144,7 @@ __global__ void convolution3D_kernel(DATA_TYPE *A, DATA_TYPE *B, int i, int ni, 
 }
 
 
-void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, int ni, int nj, int nk, int local_size)
+void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, int ni, int nj, int nk)
 {
 	double t_start, t_end;
 
@@ -157,7 +157,7 @@ void convolution3DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, i
 	cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * ni * nj * nk, cudaMemcpyHostToDevice);
 	
 	
-	dim3 block(local_size, local_size);
+	dim3 block(DIM_THREAD_BLOCK_X, DIM_THREAD_BLOCK_Y);
 	dim3 grid((size_t)(ceil( ((float)nk) / ((float)block.x) )), (size_t)(ceil( ((float)nj) / ((float)block.y) )));
 	
 	t_start = rtclock();
@@ -186,17 +186,16 @@ int main(int argc, char *argv[])
 	DATA_TYPE* B;
 	DATA_TYPE* B_outputFromGpu;
 
-	int ni, nj, nk, local_size;
+	int ni, nj, nk;
 
 	if(argc != 3){
-		fprintf(stdout, "E.g.: exe size local_size\n");
+		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
 
 	ni = atoi(argv[1]);
 	nj = ni;
 	nk = ni;
-	local_size = atoi(argv[2]);
 
 	A = (DATA_TYPE*)malloc(ni*nj*nk*sizeof(DATA_TYPE));
 	B = (DATA_TYPE*)malloc(ni*nj*nk*sizeof(DATA_TYPE));
@@ -206,7 +205,7 @@ int main(int argc, char *argv[])
 	
 	GPU_argv_init();
 
-	convolution3DCuda(A, B, B_outputFromGpu, ni, nj, nk, local_size);
+	convolution3DCuda(A, B, B_outputFromGpu, ni, nj, nk);
 
 	// t_start = rtclock();
 	// conv3D(A, B);
