@@ -152,7 +152,6 @@ void convolution2DCuda(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* B_outputFromGpu, i
 
 int main(int argc, char *argv[])
 {
-	int ni, nj;
 	//double t_start, t_end;
 
 	DATA_TYPE* A;
