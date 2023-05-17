@@ -30,12 +30,10 @@ if __name__ == '__main__':
         times[test] = list()
         print(f"Running {exec_path}/{test}.exe")
         for i in range(iterations):
-            with open(os.path.join(exec_path, "tmp.txt"), "w") as out:
-                process = subprocess.call([os.path.join(exec_path, f"{test}.exe"), f"{params[i]}"], stdout=out)
-                process.wait()
-            with open(os.path.join(exec_path, "tmp.txt"), "r") as in_file:
-                match = re.search(pattern, in_file.read())
-                times[test].append(float(match.group(1)))
+            output = subprocess.check_output([os.path.join(exec_path, f"{test}.exe"), f"{params[i]}"])
+            output = output.decode("utf-8")
+            match = re.search(pattern, output)
+            times[test].append(float(match.group(1)))
 
     print(times)
 
