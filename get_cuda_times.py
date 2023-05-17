@@ -29,7 +29,7 @@ if __name__ == '__main__':
         exec_path: str = os.path.join(test_folder, test)
         times[test] = list()
         print(f"Running {exec_path}/{test}.exe")
-        for i in range(iterations):
+        for j in range(iterations):
             output = subprocess.check_output([os.path.join(exec_path, f"{test}.exe"), f"{params[i]}"])
             output = output.decode("utf-8")
             match = re.search(pattern, output)
