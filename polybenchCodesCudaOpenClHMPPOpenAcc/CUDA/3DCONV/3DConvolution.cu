@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 
 	int ni, nj, nk;
 
-	if(argc != 3){
+	if(argc != 2){
 		fprintf(stdout, "E.g.: exe size\n");
 		return 1;
 	}
