@@ -21,7 +21,7 @@ if __name__ == '__main__':
     test_folder: str = os.path.join('polybenchCodesCudaOpenClHMPPOpenAcc', 'CUDA')
     tests: List[str] = ["2DCONV", "2MM", "3DCONV", "3MM", "ATAX", "BICG", "CORR", "COVAR", "FDTD-2D", "GEMM", "GESUMMV", "GRAMSCHM", "MVT", "SYR2K", "SYRK"]
     names: List[str] = ["2DConvolution", "2mm", "3DConvolution", "3mm", "Atax", "Bicg", "Correlation", "Covariance", "Fdtd2d", "Gemm", "Gesummv", "Gramschm", "Mvt", "Syr2k", "Syrk"]    
-    params: List[int] = [4096, 512, 512, 512, 4096, 8192, 512, 512, 512, 512, 4096, 512, 8192, 512, 512]
+    params: List[int] = [4096, 1024, 512, 512, 4096, 16384, 1024, 1024, 1024, 1024, 16384, 1024, 16384, 1024, 1024]
     times: Dict[str, List[float]] = dict()
     std_devs: List[float] = list()
     means: List[float] = list()
